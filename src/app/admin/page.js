@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Users, Briefcase, TrendingUp, Activity, DollarSign, Calendar } from 'lucide-react';
+import { formatCurrency, formatNumber, CurrencyDisplay } from '@/lib/utils';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -48,7 +49,10 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Utenti Totali</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.userCount || 0}</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.users?.total || 0}</p>
+              <p className="text-xs text-green-600">
+                {stats?.users?.active || 0} attivi • {stats?.users?.admin || 0} admin
+              </p>
             </div>
             <Users className="h-12 w-12 text-blue-600" />
           </div>
@@ -58,7 +62,10 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Portfolio Totali</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.portfolioCount || 0}</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.portfolios?.total || 0}</p>
+              <p className="text-xs text-green-600">
+                {stats?.portfolios?.active || 0} attivi
+              </p>
             </div>
             <Briefcase className="h-12 w-12 text-green-600" />
           </div>
@@ -68,7 +75,10 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Asset Totali</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.assetCount || 0}</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.assets?.total || 0}</p>
+              <p className="text-xs text-gray-600">
+                Valore medio: {formatCurrency(stats?.financial?.averagePortfolioValue || 0)}
+              </p>
             </div>
             <TrendingUp className="h-12 w-12 text-purple-600" />
           </div>
@@ -79,7 +89,10 @@ export default function AdminDashboard() {
             <div>
               <p className="text-sm font-medium text-gray-600">Valore Totale</p>
               <p className="text-3xl font-bold text-gray-900">
-                €{(stats?.totalValue || 0).toLocaleString()}
+                {formatCurrency(stats?.financial?.totalValue || 0)}
+              </p>
+              <p className="text-xs">
+                P&L: <CurrencyDisplay value={stats?.financial?.totalProfit || 0} showSign />
               </p>
             </div>
             <DollarSign className="h-12 w-12 text-orange-600" />
@@ -87,54 +100,126 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Attività recenti */}
+      {/* Attività recenti e Top Users */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Utenti attivi */}
+        {/* Top Users */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Attività Utenti</h3>
-            <Activity className="h-5 w-5 text-gray-400" />
+            <h3 className="text-lg font-semibold text-gray-900">Utenti più Attivi</h3>
+            <Users className="h-5 w-5 text-gray-400" />
           </div>
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Utenti attivi (30 giorni)</span>
-              <span className="font-semibold text-gray-900">{stats?.activeUsers || 0}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full" 
-                style={{ 
-                  width: `${Math.min(((stats?.activeUsers || 0) / (stats?.userCount || 1)) * 100, 100)}%` 
-                }}
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Ultimi login */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Ultimi Login</h3>
-            <Calendar className="h-5 w-5 text-gray-400" />
-          </div>
-          <div className="space-y-3">
-            {stats?.recentLogins?.slice(0, 5).map((login, index) => (
-              <div key={index} className="flex justify-between items-center text-sm">
-                <div>
-                  <p className="font-medium text-gray-900">{login.userName}</p>
-                  <p className="text-gray-500">{login.userEmail}</p>
+            {stats?.activity?.topUsers?.map((user, index) => (
+              <div key={user.userId} className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-blue-600">{index + 1}</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{user.userName}</p>
+                    <p className="text-xs text-gray-500">{user.userEmail}</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-gray-900">
-                    {new Date(login.timestamp).toLocaleDateString('it-IT')}
-                  </p>
-                  <p className="text-gray-500">{login.ipAddress}</p>
+                  <p className="text-sm font-semibold text-gray-900">{user.portfolioCount}</p>
+                  <p className="text-xs text-gray-500">portfolio</p>
                 </div>
               </div>
             )) || (
-              <p className="text-gray-500 text-sm">Nessun login recente</p>
+              <p className="text-gray-500 text-sm">Nessun dato disponibile</p>
             )}
           </div>
+        </div>
+
+        {/* Top Portfolios */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Portfolio con Maggior Valore</h3>
+            <Briefcase className="h-5 w-5 text-gray-400" />
+          </div>
+          <div className="space-y-3">
+            {stats?.activity?.topPortfolios?.map((portfolio, index) => (
+              <div key={portfolio.id} className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-green-600">{index + 1}</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{portfolio.name}</p>
+                    <p className="text-xs text-gray-500">{portfolio.userName}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900">{formatCurrency(portfolio.totalValue)}</p>
+                  <CurrencyDisplay 
+                    value={portfolio.totalProfit} 
+                    className="text-xs"
+                    showSign 
+                  />
+                </div>
+              </div>
+            )) || (
+              <p className="text-gray-500 text-sm">Nessun portfolio disponibile</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Attività Recente */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Attività Recente</h3>
+          <Activity className="h-5 w-5 text-gray-400" />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Utente
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Azione
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Target
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Data
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {stats?.activity?.recentActivity?.map((activity) => (
+                <tr key={activity.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{activity.userName}</div>
+                      <div className="text-sm text-gray-500">{activity.userEmail}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {activity.action}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {activity.targetType}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(activity.timestamp).toLocaleDateString('it-IT')} {' '}
+                    {new Date(activity.timestamp).toLocaleTimeString('it-IT')}
+                  </td>
+                </tr>
+              )) || (
+                <tr>
+                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                    Nessuna attività recente
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

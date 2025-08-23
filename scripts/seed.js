@@ -10,7 +10,7 @@ async function seed() {
     // Crea utente admin
     const adminPasswordHash = await bcrypt.hash('admin123', 12);
     const admin = await db.insert(users).values({
-      email: 'guidottifrancescofi@gmail.com',
+      email: 'admin@portfoliomanager.com',
       name: 'Amministratore Sistema',
       password: adminPasswordHash,
       role: 'admin',

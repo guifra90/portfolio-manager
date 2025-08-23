@@ -2,13 +2,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, Edit, Trash2, Shield, User } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Shield, User, Search, Briefcase } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -82,13 +84,55 @@ export default function AdminUsers() {
           <h1 className="text-2xl font-bold text-gray-900">Gestione Utenti</h1>
           <p className="text-gray-600">Gestisci utenti e permessi del sistema</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Nuovo Utente
-        </button>
+        <div className="flex gap-3">
+          <Link 
+            href="/admin"
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            ← Torna al Dashboard
+          </Link>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Nuovo Utente
+          </button>
+        </div>
+      </div>
+
+      {/* Statistiche e Ricerca */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{users.length}</div>
+            <div className="text-sm text-gray-600">Utenti Totali</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">{users.filter(u => u.isActive).length}</div>
+            <div className="text-sm text-gray-600">Utenti Attivi</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-600">{users.filter(u => u.role === 'admin').length}</div>
+            <div className="text-sm text-gray-600">Amministratori</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-600">{users.reduce((acc, u) => acc + (u.portfolioCount || 0), 0)}</div>
+            <div className="text-sm text-gray-600">Portfolio Totali</div>
+          </div>
+        </div>
+
+        {/* Barra di ricerca */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <input
+            type="text"
+            placeholder="Cerca utenti per nome o email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
       </div>
 
       {/* Tabella utenti */}
@@ -106,6 +150,9 @@ export default function AdminUsers() {
                 Stato
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Portfolio
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Registrato
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -114,7 +161,12 @@ export default function AdminUsers() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => (
+            {users
+              .filter(user => 
+                user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.email.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -147,6 +199,12 @@ export default function AdminUsers() {
                   }`}>
                     {user.isActive ? 'Attivo' : 'Disattivato'}
                   </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-semibold text-gray-900">{user.portfolioCount || 0}</span>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {new Date(user.createdAt).toLocaleDateString('it-IT')}

@@ -15,10 +15,12 @@ export const db = drizzle(sqlite, { schema });
 // Auto-migrate in development
 if (process.env.NODE_ENV === 'development') {
   try {
-    migrate(db, { migrationsFolder: './drizzle' });
+    const migrationsPath = path.join(process.cwd(), 'drizzle');
+    migrate(db, { migrationsFolder: migrationsPath });
     console.log('✅ Database migrated successfully');
   } catch (error) {
     console.error('❌ Migration failed:', error);
+    // Non bloccare l'app se le migrazioni falliscono
   }
 }
 

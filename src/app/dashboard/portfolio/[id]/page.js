@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Target, RefreshCw, Plus, Minus, Calculator, ExternalLink, Edit, Trash2 } from 'lucide-react';
+import { formatCurrency, formatPercentage, CurrencyDisplay, PercentageDisplay } from '@/lib/utils';
 
 export default function PortfolioDetailPage() {
   const params = useParams();
@@ -151,7 +152,7 @@ export default function PortfolioDetailPage() {
           <div className="text-center">
             <DollarSign className="h-8 w-8 text-blue-600 mx-auto mb-2" />
             <p className="text-sm font-medium text-gray-600">Valore Portfolio</p>
-            <p className="text-2xl font-bold text-gray-900">€{portfolioMetrics.totalValue.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(portfolioMetrics.totalValue)}</p>
           </div>
 
           <div className="text-center">
@@ -160,17 +161,21 @@ export default function PortfolioDetailPage() {
               <TrendingDown className="h-8 w-8 text-red-600 mx-auto mb-2" />
             }
             <p className="text-sm font-medium text-gray-600">Profitto/Perdita</p>
-            <p className={`text-2xl font-bold ${portfolioMetrics.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              €{portfolioMetrics.totalProfit.toLocaleString()}
-            </p>
+            <CurrencyDisplay 
+              value={portfolioMetrics.totalProfit}
+              className="text-2xl font-bold"
+              showSign
+            />
           </div>
 
           <div className="text-center">
             <Target className="h-8 w-8 text-purple-600 mx-auto mb-2" />
             <p className="text-sm font-medium text-gray-600">Rendimento</p>
-            <p className={`text-2xl font-bold ${portfolioMetrics.returnPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {portfolioMetrics.returnPercentage.toFixed(2)}%
-            </p>
+            <PercentageDisplay 
+              value={portfolioMetrics.returnPercentage / 100}
+              className="text-2xl font-bold"
+              showSign
+            />
           </div>
 
           <div className="text-center">
@@ -202,7 +207,7 @@ export default function PortfolioDetailPage() {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `€${value.toLocaleString()}`} />
+              <Tooltip formatter={(value) => formatCurrency(value)} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -270,24 +275,25 @@ export default function PortfolioDetailPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    €{asset.currentPrice.toFixed(2)}
+                    {formatCurrency(asset.currentPrice)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {asset.quantity}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    €{asset.currentValue.toLocaleString()}
+                    {formatCurrency(asset.currentValue)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={asset.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}>
-                      €{asset.profitLoss.toLocaleString()}
-                    </span>
+                    <CurrencyDisplay 
+                      value={asset.profitLoss}
+                      showSign
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {(asset.currentAllocation * 100).toFixed(2)}%
+                    {formatPercentage(asset.currentAllocation)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {(asset.targetAllocation * 100).toFixed(1)}%
+                    {formatPercentage(asset.targetAllocation)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -297,7 +303,7 @@ export default function PortfolioDetailPage() {
                           : 'bg-yellow-100 text-yellow-800'
                         : 'bg-green-100 text-green-800'
                     }`}>
-                      {asset.imbalance > 0 ? '+' : ''}{(asset.imbalance * 100).toFixed(2)}%
+                      {formatPercentage(asset.imbalance, { showSign: true })}
                     </span>
                   </td>
                 </tr>
@@ -361,7 +367,7 @@ export default function PortfolioDetailPage() {
             <h4 className="text-md font-semibold text-gray-900 mb-4">
               Operazioni Necessarie 
               {rebalancingMode === 'liquidity' && newLiquidity > 0 && 
-                ` (con €${newLiquidity.toLocaleString()} di nuova liquidità)`
+                ` (con ${formatCurrency(newLiquidity)} di nuova liquidità)`
               }
             </h4>
             
@@ -397,13 +403,13 @@ export default function PortfolioDetailPage() {
                         {Math.abs(asset.quantityDelta)} quote
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        €{asset.operationAmount.toLocaleString()}
+                        {formatCurrency(asset.operationAmount)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {asset.newQuantity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        €{asset.targetValue.toLocaleString()}
+                        {formatCurrency(asset.targetValue)}
                       </td>
                     </tr>
                   ))}
