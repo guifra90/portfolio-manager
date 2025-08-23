@@ -54,6 +54,141 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer components {
+  /* Professional Card Styles */
+  .card-professional {
+    @apply bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all duration-200;
+  }
+  
+  .card-compact {
+    @apply bg-white border border-gray-100 rounded-lg shadow-sm p-4;
+  }
+  
+  /* Professional Button Variants */
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2.5 rounded-lg transition-all duration-200;
+  }
+  
+  .btn-compact {
+    @apply px-3 py-1.5 text-sm rounded-md;
+  }
+  
+  /* Professional Table Styles */
+  .table-professional {
+    @apply w-full border-collapse;
+  }
+  
+  .table-professional th {
+    @apply bg-gray-50 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200;
+  }
+  
+  .table-professional td {
+    @apply px-4 py-3 text-sm text-gray-900 border-b border-gray-100;
+  }
+  
+  .table-professional tr:hover td {
+    @apply bg-gray-50;
+  }
+  
+  /* Professional Input Styles */
+  .input-professional {
+    @apply w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200;
+  }
+  
+  /* Compact Layout Utilities */
+  .layout-compact {
+    @apply space-y-4;
+  }
+  
+  .section-compact {
+    @apply py-4;
+  }
+  
+  /* Professional Typography */
+  .heading-lg {
+    @apply text-2xl font-bold text-gray-900 tracking-tight;
+  }
+  
+  .heading-md {
+    @apply text-lg font-semibold text-gray-900;
+  }
+  
+  .heading-sm {
+    @apply text-sm font-semibold text-gray-700 uppercase tracking-wide;
+  }
+  
+  /* Status Indicators */
+  .status-positive {
+    @apply text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-negative {
+    @apply text-red-700 bg-red-50 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-neutral {
+    @apply text-gray-700 bg-gray-100 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  /* Responsive Layout Utilities */
+  .responsive-grid-cards {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+
+  .responsive-grid-stats {
+    @apply grid grid-cols-2 sm:grid-cols-4 gap-4;
+  }
+
+  .responsive-flex-header {
+    @apply flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center;
+  }
+
+  .responsive-table-container {
+    @apply overflow-x-auto;
+  }
+
+  .responsive-modal {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50;
+  }
+
+  .responsive-modal-content {
+    @apply card-professional w-full max-w-lg mx-4 sm:mx-0 p-6 max-h-[90vh] overflow-y-auto;
+  }
+
+  .responsive-form-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
+  }
+
+  /* Mobile Navigation */
+  .mobile-nav-item {
+    @apply block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100;
+  }
+
+  /* Compact Mobile Styles */
+  @media (max-width: 640px) {
+    .card-professional {
+      @apply rounded-lg shadow-sm;
+    }
+    
+    .btn-primary, .btn-secondary {
+      @apply text-sm px-3 py-2;
+    }
+    
+    .heading-lg {
+      @apply text-xl;
+    }
+    
+    .heading-md {
+      @apply text-base;
+    }
   }
 }

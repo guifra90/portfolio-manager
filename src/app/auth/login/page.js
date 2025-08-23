@@ -130,6 +130,16 @@ export default function LoginPage() {
                 {isLoading ? 'Accesso in corso...' : 'Accedi'}
               </button>
             </div>
+
+            {/* Forgot Password Link */}
+            <div className="text-center">
+              <Link 
+                href="/auth/forgot-password" 
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Hai dimenticato la password?
+              </Link>
+            </div>
           </form>
 
           {/* Demo credentials info */}

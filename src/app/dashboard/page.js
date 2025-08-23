@@ -42,19 +42,19 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="layout-compact">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="responsive-flex-header">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">I tuoi Portfolio</h2>
-          <p className="text-gray-600">Gestisci e monitora i tuoi investimenti</p>
+          <h2 className="heading-lg">I tuoi Portfolio</h2>
+          <p className="text-gray-500 text-sm mt-1">Gestisci e monitora i tuoi investimenti</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          className="btn-primary btn-compact flex items-center gap-2 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
-          Nuovo Portfolio
+          <span className="sm:inline">Nuovo Portfolio</span>
         </button>
       </div>
 
@@ -77,12 +77,12 @@ export default function DashboardPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="responsive-grid-cards">
           {portfolios.map((portfolio) => (
-            <div key={portfolio.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">{portfolio.name}</h3>
+            <div key={portfolio.id} className="card-professional">
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="heading-md">{portfolio.name}</h3>
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-5 w-5 text-gray-400" />
                     <div className="relative">
@@ -136,27 +136,27 @@ export default function DashboardPage() {
                 
                 <Link href={`/dashboard/portfolio/${portfolio.id}`}>
                   <div className="cursor-pointer">
-                    <p className="text-sm text-gray-600 mb-4">{portfolio.description}</p>
+                    <p className="text-xs text-gray-500 mb-3 line-clamp-2">{portfolio.description}</p>
                     
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">Valore Totale</span>
-                        <span className="font-semibold text-gray-900">
+                        <span className="text-xs text-gray-500">Valore Totale</span>
+                        <span className="font-semibold text-sm text-gray-900">
                           {formatCurrency(portfolio.totalValue)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">P&L</span>
+                        <span className="text-xs text-gray-500">P&L</span>
                         <CurrencyDisplay 
                           value={portfolio.totalProfit}
-                          className="font-semibold"
+                          className="font-semibold text-sm"
                           showSign
                         />
                       </div>
                     </div>
                     
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <p className="text-xs text-gray-500">
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-xs text-gray-400">
                         Aggiornato: {new Date(portfolio.updatedAt).toLocaleDateString('it-IT')}
                       </p>
                     </div>

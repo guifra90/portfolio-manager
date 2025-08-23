@@ -36,16 +36,16 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="layout-compact">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Amministratore</h1>
+        <h1 className="heading-lg">Dashboard Amministratore</h1>
         <p className="text-gray-600">Panoramica del sistema e statistiche</p>
       </div>
 
       {/* Statistiche principali */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="responsive-grid-cards">
+        <div className="card-professional p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Utenti Totali</p>
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="card-professional p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Portfolio Totali</p>
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="card-professional p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Asset Totali</p>
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="card-professional p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Valore Totale</p>
@@ -103,9 +103,9 @@ export default function AdminDashboard() {
       {/* Attività recenti e Top Users */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Users */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="card-professional p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Utenti più Attivi</h3>
+            <h3 className="heading-md">Utenti più Attivi</h3>
             <Users className="h-5 w-5 text-gray-400" />
           </div>
           <div className="space-y-3">
@@ -132,9 +132,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* Top Portfolios */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="card-professional p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Portfolio con Maggior Valore</h3>
+            <h3 className="heading-md">Portfolio con Maggior Valore</h3>
             <Briefcase className="h-5 w-5 text-gray-400" />
           </div>
           <div className="space-y-3">
@@ -166,54 +166,46 @@ export default function AdminDashboard() {
       </div>
 
       {/* Attività Recente */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="card-professional p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Attività Recente</h3>
+          <h3 className="heading-md">Attività Recente</h3>
           <Activity className="h-5 w-5 text-gray-400" />
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="responsive-table-container">
+          <table className="table-professional">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Utente
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Azione
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Target
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data
-                </th>
+                <th>Utente</th>
+                <th>Azione</th>
+                <th>Target</th>
+                <th>Data</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody>
               {stats?.activity?.recentActivity?.map((activity) => (
                 <tr key={activity.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td>
                     <div>
                       <div className="text-sm font-medium text-gray-900">{activity.userName}</div>
                       <div className="text-sm text-gray-500">{activity.userEmail}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <td>
+                    <span className="status-neutral">
                       {activity.action}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td>
                     {activity.targetType}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td>
                     {new Date(activity.timestamp).toLocaleDateString('it-IT')} {' '}
                     {new Date(activity.timestamp).toLocaleTimeString('it-IT')}
                   </td>
                 </tr>
               )) || (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={4} className="text-center text-gray-500">
                     Nessuna attività recente
                   </td>
                 </tr>
@@ -224,12 +216,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Azioni rapide */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Azioni Rapide</h3>
+      <div className="card-professional p-6">
+        <h3 className="heading-md mb-4">Azioni Rapide</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => window.location.href = '/admin/users'}
-            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+            className="card-compact hover:shadow-md transition-all text-left"
           >
             <Users className="h-6 w-6 text-blue-600 mb-2" />
             <h4 className="font-medium text-gray-900">Gestisci Utenti</h4>
@@ -238,7 +230,7 @@ export default function AdminDashboard() {
 
           <button
             onClick={() => window.location.href = '/admin/portfolios'}
-            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+            className="card-compact hover:shadow-md transition-all text-left"
           >
             <Briefcase className="h-6 w-6 text-green-600 mb-2" />
             <h4 className="font-medium text-gray-900">Visualizza Portfolio</h4>
@@ -247,7 +239,7 @@ export default function AdminDashboard() {
 
           <button
             onClick={() => window.location.href = '/admin/audit'}
-            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+            className="card-compact hover:shadow-md transition-all text-left"
           >
             <Activity className="h-6 w-6 text-purple-600 mb-2" />
             <h4 className="font-medium text-gray-900">Audit Log</h4>

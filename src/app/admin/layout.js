@@ -3,7 +3,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, Users, Briefcase, Activity, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -11,7 +11,14 @@ import { usePathname } from 'next/navigation';
 export default function AdminLayout({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
+  
+  // Usa un default se usePathname fallisce
+  let pathname = '/admin';
+  try {
+    pathname = usePathname() || '/admin';
+  } catch (error) {
+    console.warn('usePathname error, using default:', error);
+  }
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -34,11 +41,11 @@ export default function AdminLayout({ children }) {
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: Activity, current: pathname === '/admin' },
-    { name: 'Utenti', href: '/admin/users', icon: Users, current: pathname === '/admin/users' },
-    { name: 'Portfolio', href: '/admin/portfolios', icon: Briefcase, current: pathname === '/admin/portfolios' },
-    { name: 'Audit Log', href: '/admin/audit', icon: Shield, current: pathname === '/admin/audit' },
-    { name: 'Impostazioni', href: '/admin/settings', icon: Settings, current: pathname === '/admin/settings' },
+    { name: 'Dashboard', href: '/admin', icon: Activity },
+    { name: 'Utenti', href: '/admin/users', icon: Users },
+    { name: 'Portfolio', href: '/admin/portfolios', icon: Briefcase },
+    { name: 'Audit Log', href: '/admin/audit', icon: Shield },
+    { name: 'Impostazioni', href: '/admin/settings', icon: Settings },
   ];
 
   return (
@@ -58,7 +65,7 @@ export default function AdminLayout({ children }) {
               key={item.name}
               href={item.href}
               className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors ${
-                item.current
+                pathname === item.href
                   ? 'bg-blue-700 text-white'
                   : 'text-gray-300 hover:bg-gray-700 hover:text-white'
               }`}

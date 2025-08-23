@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm run dev:*)",
       "Bash(npm run:*)",
-      "Bash(npx drizzle-kit:*)"
+      "Bash(npx drizzle-kit:*)",
+      "Bash(sqlite3:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

@@ -72,16 +72,23 @@ export default function DashboardLayout({ children }) {
                 
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <button
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        // TODO: Implementare settings
-                      }}
+                    <Link
+                      href="/dashboard/profile"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <User className="h-4 w-4" />
+                      Il mio Profilo
+                    </Link>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setIsProfileOpen(false)}
                       className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       <Settings className="h-4 w-4" />
                       Impostazioni
-                    </button>
+                    </Link>
+                    <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={() => signOut({ callbackUrl: '/auth/login' })}
                       className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

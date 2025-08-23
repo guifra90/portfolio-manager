@@ -41,11 +41,25 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Portfolio not found or access denied' }, { status: 404 });
     }
 
+    // Calcola i valori derivati
+    const quantity = assetData.quantity;
+    const currentPrice = assetData.currentPrice;
+    const averagePurchasePrice = assetData.averagePurchasePrice || currentPrice;
+    
+    const currentValue = quantity * currentPrice;
+    const purchaseValue = quantity * averagePurchasePrice;
+    const profitLoss = currentValue - purchaseValue;
+    const profitLossPercentage = purchaseValue > 0 ? (profitLoss / purchaseValue) * 100 : 0;
+
     const newAsset = await db
       .insert(assets)
       .values({
         ...assetData,
-        currentValue: assetData.quantity * assetData.currentPrice,
+        averagePurchasePrice,
+        currentValue,
+        purchaseValue,
+        profitLoss,
+        profitLossPercentage,
       })
       .returning();
 

@@ -37,9 +37,12 @@ export const assets = sqliteTable('assets', {
   justETFUrl: text('justetf_url'),
   targetAllocation: real('target_allocation').notNull(),
   currentPrice: real('current_price').notNull(),
+  averagePurchasePrice: real('average_purchase_price').notNull().default(0),
   quantity: integer('quantity').notNull(),
   currentValue: real('current_value').notNull(),
+  purchaseValue: real('purchase_value').notNull().default(0),
   profitLoss: real('profit_loss').notNull().default(0),
+  profitLossPercentage: real('profit_loss_percentage').notNull().default(0),
   currentAllocation: real('current_allocation').notNull().default(0),
   imbalance: real('imbalance').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
@@ -71,4 +74,14 @@ export const auditLog = sqliteTable('audit_log', {
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   timestamp: integer('timestamp', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// Tabella Password Reset Tokens
+export const passwordResetTokens = sqliteTable('password_reset_tokens', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  email: text('email').notNull(),
+  token: text('token').notNull().unique(),
+  expires: integer('expires', { mode: 'timestamp' }).notNull(),
+  used: integer('used', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });

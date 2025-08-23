@@ -31,7 +31,7 @@ export async function PUT(request, { params }) {
     const session = await requireAuth(request);
     requirePermission(session.user.role, PERMISSIONS.MANAGE_USERS);
 
-    const { name, email, role, isActive, password } = await request.json();
+    const { name, email, role, isActive, resetPassword, newPassword } = await request.json();
 
     // Verifica che l'utente esista
     const existingUser = await db.select().from(users).where(eq(users.id, params.id)).get();
@@ -47,6 +47,19 @@ export async function PUT(request, { params }) {
       );
     }
 
+    // Verifica se l'email è già utilizzata da un altro utente
+    if (email && email !== existingUser.email) {
+      const emailExists = await db.select().from(users).where(eq(users.email, email)).get();
+      if (emailExists) {
+        return NextResponse.json({ error: 'Email già utilizzata da un altro utente' }, { status: 400 });
+      }
+    }
+
+    // Validazione password reset
+    if (resetPassword && (!newPassword || newPassword.length < 6)) {
+      return NextResponse.json({ error: 'La nuova password deve essere di almeno 6 caratteri' }, { status: 400 });
+    }
+
     // Prepara i dati di aggiornamento
     const updateData = {
       updatedAt: new Date()
@@ -57,8 +70,8 @@ export async function PUT(request, { params }) {
     if (role !== undefined) updateData.role = role;
     if (isActive !== undefined) updateData.isActive = isActive;
     
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 12);
+    if (resetPassword && newPassword) {
+      updateData.password = await bcrypt.hash(newPassword, 12);
     }
 
     const updatedUser = await db
@@ -70,7 +83,7 @@ export async function PUT(request, { params }) {
     // Audit log
     await createAuditLog({
       userId: session.user.id,
-      action: AUDIT_ACTIONS.UPDATE_USER,
+      action: resetPassword ? AUDIT_ACTIONS.PASSWORD_RESET : AUDIT_ACTIONS.UPDATE_USER,
       targetType: TARGET_TYPES.USER,
       targetId: params.id,
       details: { 
@@ -78,7 +91,9 @@ export async function PUT(request, { params }) {
         previousRole: existingUser.role,
         newRole: role,
         previousActive: existingUser.isActive,
-        newActive: isActive
+        newActive: isActive,
+        passwordReset: resetPassword,
+        adminAction: true
       },
       request
     });

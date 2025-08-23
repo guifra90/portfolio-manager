@@ -77,11 +77,11 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="layout-compact">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="responsive-flex-header">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestione Utenti</h1>
+          <h1 className="heading-lg">Gestione Utenti</h1>
           <p className="text-gray-600">Gestisci utenti e permessi del sistema</p>
         </div>
         <div className="flex gap-3">
@@ -93,7 +93,7 @@ export default function AdminUsers() {
           </Link>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            className="btn-primary flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Nuovo Utente
@@ -102,8 +102,8 @@ export default function AdminUsers() {
       </div>
 
       {/* Statistiche e Ricerca */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div className="card-professional p-6">
+        <div className="responsive-grid-stats mb-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{users.length}</div>
             <div className="text-sm text-gray-600">Utenti Totali</div>
@@ -130,37 +130,25 @@ export default function AdminUsers() {
             placeholder="Cerca utenti per nome o email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="input-professional pl-10"
           />
         </div>
       </div>
 
       {/* Tabella utenti */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="card-professional overflow-hidden">
+        <table className="table-professional">
+          <thead>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Utente
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ruolo
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Stato
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Portfolio
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Registrato
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Azioni
-              </th>
+              <th>Utente</th>
+              <th>Ruolo</th>
+              <th>Stato</th>
+              <th>Portfolio</th>
+              <th>Registrato</th>
+              <th>Azioni</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody>
             {users
               .filter(user => 
                 user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -168,7 +156,7 @@ export default function AdminUsers() {
               )
               .map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td>
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
@@ -181,7 +169,7 @@ export default function AdminUsers() {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td>
                   <select
                     value={user.role}
                     onChange={(e) => handleRoleChange(user.id, e.target.value)}
@@ -191,7 +179,7 @@ export default function AdminUsers() {
                     <option value="admin">Admin</option>
                   </select>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td>
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     user.isActive 
                       ? 'bg-green-100 text-green-800' 
@@ -200,16 +188,16 @@ export default function AdminUsers() {
                     {user.isActive ? 'Attivo' : 'Disattivato'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td>
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-gray-400" />
                     <span className="text-sm font-semibold text-gray-900">{user.portfolioCount || 0}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td>
                   {new Date(user.createdAt).toLocaleDateString('it-IT')}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setEditingUser(user)}
@@ -291,11 +279,11 @@ function CreateUserModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Crea Nuovo Utente</h3>
+    <div className="responsive-modal">
+      <div className="responsive-modal-content max-w-md">
+        <h3 className="heading-md mb-4">Crea Nuovo Utente</h3>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="layout-compact">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
@@ -309,7 +297,7 @@ function CreateUserModal({ onClose, onSuccess }) {
               required
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input-professional"
             />
           </div>
           
@@ -320,7 +308,7 @@ function CreateUserModal({ onClose, onSuccess }) {
               required
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input-professional"
             />
           </div>
           
@@ -331,7 +319,7 @@ function CreateUserModal({ onClose, onSuccess }) {
               required
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input-professional"
             />
           </div>
           
@@ -340,7 +328,7 @@ function CreateUserModal({ onClose, onSuccess }) {
             <select
               value={formData.role}
               onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input-professional"
             >
               <option value="user">User</option>
               <option value="admin">Admin</option>
@@ -351,14 +339,14 @@ function CreateUserModal({ onClose, onSuccess }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              className="btn-secondary"
             >
               Annulla
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="btn-primary disabled:opacity-50"
             >
               {isLoading ? 'Creazione...' : 'Crea Utente'}
             </button>
@@ -373,8 +361,11 @@ function CreateUserModal({ onClose, onSuccess }) {
 function EditUserModal({ user, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: user.name,
+    email: user.email,
     role: user.role,
-    isActive: user.isActive
+    isActive: user.isActive,
+    resetPassword: false,
+    newPassword: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -406,74 +397,112 @@ function EditUserModal({ user, onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Modifica Utente</h3>
+    <div className="responsive-modal">
+      <div className="responsive-modal-content max-w-md">
+        <h3 className="heading-md mb-4">Modifica Utente</h3>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="layout-compact">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
             </div>
           )}
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={user.email}
-              disabled
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
-            />
+          <div className="responsive-form-grid">
+            <div>
+              <label className="heading-sm mb-2">Nome</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="input-professional"
+                placeholder="Nome utente"
+              />
+            </div>
+
+            <div>
+              <label className="heading-sm mb-2">Email</label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                className="input-professional"
+                placeholder="email@example.com"
+              />
+            </div>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+
+          <div className="responsive-form-grid">
+            <div>
+              <label className="heading-sm mb-2">Ruolo</label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                className="input-professional"
+              >
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div className="flex items-center">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  className="rounded border-gray-300"
+                />
+                <span className="heading-sm">Account attivo</span>
+              </label>
+            </div>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ruolo</label>
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="flex items-center">
+
+          {/* Password Reset Section */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center gap-2 mb-3">
               <input
                 type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                className="mr-2"
+                id="resetPassword"
+                checked={formData.resetPassword}
+                onChange={(e) => setFormData(prev => ({ ...prev, resetPassword: e.target.checked }))}
+                className="rounded border-gray-300"
               />
-              <span className="text-sm font-medium text-gray-700">Utente attivo</span>
-            </label>
+              <label htmlFor="resetPassword" className="heading-sm">
+                Reimposta password
+              </label>
+            </div>
+
+            {formData.resetPassword && (
+              <div>
+                <label className="heading-sm mb-2">Nuova password</label>
+                <input
+                  type="password"
+                  value={formData.newPassword}
+                  onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
+                  className="input-professional"
+                  placeholder="Inserisci nuova password (min 6 caratteri)"
+                  minLength="6"
+                  required={formData.resetPassword}
+                />
+              </div>
+            )}
           </div>
           
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              className="btn-secondary"
             >
               Annulla
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="btn-primary disabled:opacity-50"
             >
               {isLoading ? 'Aggiornamento...' : 'Aggiorna'}
             </button>

@@ -12,8 +12,9 @@ sqlite.pragma('journal_mode = WAL');
 
 export const db = drizzle(sqlite, { schema });
 
-// Auto-migrate in development
-if (process.env.NODE_ENV === 'development') {
+// Auto-migrate in development - DISABLED to avoid conflicts
+// Migration already applied manually via drizzle-kit push:sqlite
+if (process.env.NODE_ENV === 'development' && process.env.ENABLE_AUTO_MIGRATE === 'true') {
   try {
     const migrationsPath = path.join(process.cwd(), 'drizzle');
     migrate(db, { migrationsFolder: migrationsPath });

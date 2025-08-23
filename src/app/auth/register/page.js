@@ -17,7 +17,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [isFirstUser, setIsFirstUser] = useState(false);
   const router = useRouter();
 
   const handleChange = (e) => {
@@ -55,7 +54,6 @@ export default function RegisterPage() {
 
       if (response.ok) {
         setSuccess(true);
-        setIsFirstUser(data.isFirstUser);
         setTimeout(() => {
           router.push('/auth/login');
         }, 3000);
@@ -83,17 +81,6 @@ export default function RegisterPage() {
               <h3 className="mt-2 text-lg font-medium text-gray-900">
                 Registrazione completata!
               </h3>
-              {isFirstUser && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <div className="flex items-center gap-2 text-blue-700">
-                    <Shield className="h-5 w-5" />
-                    <span className="font-medium">Congratulazioni!</span>
-                  </div>
-                  <p className="mt-1 text-sm text-blue-600">
-                    Sei il primo utente registrato e hai ricevuto automaticamente i privilegi di amministratore.
-                  </p>
-                </div>
-              )}
               <p className="mt-4 text-sm text-gray-500">
                 Il tuo account è stato creato con successo. Verrai reindirizzato alla pagina di login...
               </p>
@@ -224,12 +211,6 @@ export default function RegisterPage() {
               </button>
             </div>
           </form>
-
-          <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>💡 Primo utente?</strong> Il primo account registrato riceverà automaticamente i privilegi di amministratore!
-            </p>
-          </div>
         </div>
       </div>
     </div>

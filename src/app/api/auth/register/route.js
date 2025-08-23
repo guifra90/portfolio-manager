@@ -1,7 +1,7 @@
 // src/app/api/auth/register/route.js
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { eq, count } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import db from '@/lib/db/index.js';
 import { users } from '@/lib/db/schema.js';
 import { createAuditLog, AUDIT_ACTIONS, TARGET_TYPES } from '@/lib/auth/audit.js';
@@ -42,18 +42,14 @@ export async function POST(request) {
     // Hash della password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Determina il ruolo: primo utente diventa admin
-    const userCount = await db.select({ count: count() }).from(users);
-    const role = userCount[0].count === 0 ? 'admin' : 'user';
-
-    // Crea il nuovo utente
+    // Crea il nuovo utente (sempre con ruolo 'user')
     const newUser = await db
       .insert(users)
       .values({
         email,
         name,
         password: hashedPassword,
-        role,
+        role: 'user',
       })
       .returning();
 
@@ -63,7 +59,7 @@ export async function POST(request) {
       action: AUDIT_ACTIONS.CREATE_USER,
       targetType: TARGET_TYPES.USER,
       targetId: newUser[0].id,
-      details: { email, name, role, selfRegistration: true },
+      details: { email, name, role: 'user', selfRegistration: true },
       request
     });
 
@@ -73,8 +69,7 @@ export async function POST(request) {
     return NextResponse.json(
       { 
         message: 'Utente creato con successo',
-        user: userWithoutPassword,
-        isFirstUser: role === 'admin'
+        user: userWithoutPassword
       },
       { status: 201 }
     );

@@ -46,13 +46,28 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
+    // Calcola i valori derivati se necessario
+    const updateData = { ...assetData, updatedAt: new Date() };
+    
+    if (assetData.quantity !== undefined || assetData.currentPrice !== undefined || assetData.averagePurchasePrice !== undefined) {
+      const quantity = assetData.quantity !== undefined ? assetData.quantity : asset.quantity;
+      const currentPrice = assetData.currentPrice !== undefined ? assetData.currentPrice : asset.currentPrice;
+      const averagePurchasePrice = assetData.averagePurchasePrice !== undefined ? assetData.averagePurchasePrice : asset.averagePurchasePrice;
+      
+      const currentValue = quantity * currentPrice;
+      const purchaseValue = quantity * averagePurchasePrice;
+      const profitLoss = currentValue - purchaseValue;
+      const profitLossPercentage = purchaseValue > 0 ? (profitLoss / purchaseValue) * 100 : 0;
+      
+      updateData.currentValue = currentValue;
+      updateData.purchaseValue = purchaseValue;
+      updateData.profitLoss = profitLoss;
+      updateData.profitLossPercentage = profitLossPercentage;
+    }
+
     const updatedAsset = await db
       .update(assets)
-      .set({
-        ...assetData,
-        currentValue: assetData.quantity * assetData.currentPrice,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(assets.id, params.id))
       .returning();
 
