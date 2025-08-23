@@ -7,10 +7,12 @@ import { useEffect, useState } from 'react';
 import { Shield, Users, Briefcase, Activity, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function AdminLayout({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
   
   // Usa un default se usePathname fallisce
   let pathname = '/admin';
@@ -21,23 +23,20 @@ export default function AdminLayout({ children }) {
   }
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && status === 'unauthenticated') {
       router.push('/auth/login');
-    } else if (status === 'authenticated' && session?.user?.role !== 'admin') {
+    } else if (isMounted && status === 'authenticated' && session?.user?.role !== 'admin') {
       router.push('/dashboard');
     }
-  }, [status, session, router]);
+  }, [status, session, router, isMounted]);
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!session || session.user.role !== 'admin') {
-    return null;
+  // Prevent hydration mismatch by showing nothing until mounted
+  if (!isMounted || status === 'loading' || !session || session.user.role !== 'admin') {
+    return <LoadingSpinner />;
   }
 
   const navigation = [

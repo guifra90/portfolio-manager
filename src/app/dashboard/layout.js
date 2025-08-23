@@ -6,28 +6,27 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { User, LogOut, Settings, Plus, Briefcase, Shield } from 'lucide-react';
 import Link from 'next/link';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function DashboardLayout({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && status === 'unauthenticated') {
       router.push('/auth/login');
     }
-  }, [status, router]);
+  }, [status, router, isMounted]);
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null;
+  // Prevent hydration mismatch by showing nothing until mounted
+  if (!isMounted || status === 'loading' || !session) {
+    return <LoadingSpinner />;
   }
 
   return (

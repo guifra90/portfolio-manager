@@ -2,7 +2,17 @@
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
+import NoSSR from '../NoSSR';
+import LoadingSpinner from '../LoadingSpinner';
 
 export function AuthProvider({ children }) {
-  return <SessionProvider>{children}</SessionProvider>;
+  const fallback = <LoadingSpinner />;
+
+  return (
+    <SessionProvider>
+      <NoSSR fallback={fallback}>
+        {children}
+      </NoSSR>
+    </SessionProvider>
+  );
 }
