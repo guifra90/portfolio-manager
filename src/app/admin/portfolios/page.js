@@ -43,9 +43,15 @@ export default function AdminPortfoliosPage() {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
       
-      if (sortBy === 'updatedAt' || sortBy === 'createdAt') {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
+      if (sortBy === 'updatedAt' || sortBy === 'createdAt' || sortBy === 'customCreatedAt') {
+        // Per customCreatedAt, se è null/undefined, usiamo una data molto vecchia per l'ordinamento
+        if (sortBy === 'customCreatedAt') {
+          aValue = aValue ? new Date(aValue) : new Date('1900-01-01');
+          bValue = bValue ? new Date(bValue) : new Date('1900-01-01');
+        } else {
+          aValue = new Date(aValue);
+          bValue = new Date(bValue);
+        }
       }
       
       if (sortOrder === 'desc') {
@@ -172,7 +178,8 @@ export default function AdminPortfoliosPage() {
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="updatedAt">Data Aggiornamento</option>
-              <option value="createdAt">Data Creazione</option>
+              <option value="customCreatedAt">Data Creazione Personalizzata</option>
+              <option value="createdAt">Data Creazione Sistema</option>
               <option value="name">Nome</option>
               <option value="totalValue">Valore</option>
               <option value="totalProfit">P&L</option>
@@ -219,6 +226,12 @@ export default function AdminPortfoliosPage() {
                 </th>
                 <th 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('customCreatedAt')}
+                >
+                  Data Creazione
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('updatedAt')}
                 >
                   Ultimo Aggiornamento
@@ -260,6 +273,17 @@ export default function AdminPortfoliosPage() {
                       className="text-sm font-semibold"
                       showSign
                     />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <div className="text-sm text-gray-900">
+                        {portfolio.customCreatedAt ? 
+                          new Date(portfolio.customCreatedAt).toLocaleDateString('it-IT') : 
+                          <span className="text-gray-400 italic">Non specificata</span>
+                        }
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -342,7 +366,8 @@ export default function AdminPortfoliosPage() {
 function EditPortfolioModal({ portfolio, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: portfolio.name,
-    description: portfolio.description || ''
+    description: portfolio.description || '',
+    customCreatedAt: portfolio.customCreatedAt ? new Date(portfolio.customCreatedAt).toISOString().split('T')[0] : ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -423,6 +448,21 @@ function EditPortfolioModal({ portfolio, onClose, onSuccess }) {
               rows={3}
               placeholder="Descrizione del portfolio..."
             />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Data di creazione (opzionale)
+            </label>
+            <input
+              type="date"
+              value={formData.customCreatedAt}
+              onChange={(e) => setFormData(prev => ({ ...prev, customCreatedAt: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Data personalizzata di creazione del portfolio. Se vuota, sarà utilizzata la data di sistema.
+            </p>
           </div>
           
           <div className="flex justify-end gap-3 pt-4">

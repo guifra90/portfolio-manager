@@ -7,6 +7,7 @@ export const ROLES = {
 export const PERMISSIONS = {
   // User permissions
   VIEW_OWN_PORTFOLIO: 'view_own_portfolio',
+  CREATE_PORTFOLIO: 'create_portfolio',
   MANAGE_OWN_PORTFOLIO: 'manage_own_portfolio',
   MANAGE_OWN_ASSETS: 'manage_own_assets',
   
@@ -22,6 +23,7 @@ export const PERMISSIONS = {
 export const ROLE_PERMISSIONS = {
   [ROLES.USER]: [
     PERMISSIONS.VIEW_OWN_PORTFOLIO,
+    PERMISSIONS.CREATE_PORTFOLIO,
     PERMISSIONS.MANAGE_OWN_PORTFOLIO,
     PERMISSIONS.MANAGE_OWN_ASSETS
   ],

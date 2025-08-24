@@ -56,7 +56,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const session = await requireAuth(request);
-    const { name, description } = await request.json();
+    const { name, description, customCreatedAt } = await request.json();
     
     const portfolio = await checkPortfolioAccess(session, params.id);
     if (!portfolio) {
@@ -71,13 +71,19 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
+    const updateData = {
+      name,
+      description,
+      updatedAt: new Date(),
+    };
+
+    if (customCreatedAt !== undefined) {
+      updateData.customCreatedAt = customCreatedAt ? new Date(customCreatedAt) : null;
+    }
+
     const updatedPortfolio = await db
       .update(portfolios)
-      .set({
-        name,
-        description,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(portfolios.id, params.id))
       .returning();
 

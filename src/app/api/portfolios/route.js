@@ -20,6 +20,7 @@ export async function GET(request) {
           id: portfolios.id,
           name: portfolios.name,
           description: portfolios.description,
+          customCreatedAt: portfolios.customCreatedAt,
           totalValue: portfolios.totalValue,
           totalProfit: portfolios.totalProfit,
           isActive: portfolios.isActive,
@@ -45,5 +46,61 @@ export async function GET(request) {
     return NextResponse.json(userPortfolios);
   } catch (error) {
     return createAuthResponse(error);
+  }
+}
+
+export async function POST(request) {
+  try {
+    const session = await requireAuth(request);
+    
+    if (!hasPermission(session.user.role, PERMISSIONS.CREATE_PORTFOLIO)) {
+      return NextResponse.json(
+        { error: 'Non hai i permessi per creare portfolio' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { name, description, customCreatedAt } = body;
+
+    if (!name || name.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Il nome del portfolio è obbligatorio' },
+        { status: 400 }
+      );
+    }
+
+    const portfolioData = {
+      userId: session.user.id,
+      name: name.trim(),
+      description: description?.trim() || null,
+    };
+
+    if (customCreatedAt) {
+      portfolioData.customCreatedAt = new Date(customCreatedAt);
+    }
+
+    const [newPortfolio] = await db
+      .insert(portfolios)
+      .values(portfolioData)
+      .returning();
+
+    await createAuditLog({
+      userId: session.user.id,
+      action: AUDIT_ACTIONS.CREATE,
+      targetType: TARGET_TYPES.PORTFOLIO,
+      targetId: newPortfolio.id,
+      details: { name: newPortfolio.name, description: newPortfolio.description },
+      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown'
+    });
+
+    return NextResponse.json(newPortfolio, { status: 201 });
+  } catch (error) {
+    console.error('Errore nella creazione del portfolio:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server' },
+      { status: 500 }
+    );
   }
 }

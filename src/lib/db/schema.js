@@ -20,6 +20,7 @@ export const portfolios = sqliteTable('portfolios', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
+  customCreatedAt: integer('custom_created_at', { mode: 'timestamp' }),
   totalValue: real('total_value').notNull().default(0),
   totalProfit: real('total_profit').notNull().default(0),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),

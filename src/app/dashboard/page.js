@@ -156,6 +156,11 @@ export default function DashboardPage() {
                     </div>
                     
                     <div className="mt-3 pt-3 border-t border-gray-100">
+                      {portfolio.customCreatedAt && (
+                        <p className="text-xs text-gray-400 mb-1">
+                          Creato: {new Date(portfolio.customCreatedAt).toLocaleDateString('it-IT')}
+                        </p>
+                      )}
                       <p className="text-xs text-gray-400">
                         Aggiornato: {new Date(portfolio.updatedAt).toLocaleDateString('it-IT')}
                       </p>
@@ -207,7 +212,8 @@ export default function DashboardPage() {
 function CreatePortfolioModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    customCreatedAt: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -279,6 +285,21 @@ function CreatePortfolioModal({ onClose, onSuccess }) {
             />
           </div>
           
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Data di creazione (opzionale)
+            </label>
+            <input
+              type="date"
+              value={formData.customCreatedAt}
+              onChange={(e) => setFormData(prev => ({ ...prev, customCreatedAt: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Se non specificata, verrà usata la data di oggi
+            </p>
+          </div>
+          
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -305,7 +326,8 @@ function CreatePortfolioModal({ onClose, onSuccess }) {
 function EditPortfolioModal({ portfolio, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: portfolio.name,
-    description: portfolio.description || ''
+    description: portfolio.description || '',
+    customCreatedAt: portfolio.customCreatedAt ? new Date(portfolio.customCreatedAt).toISOString().split('T')[0] : ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -374,6 +396,21 @@ function EditPortfolioModal({ portfolio, onClose, onSuccess }) {
               rows={3}
               placeholder="Descrizione del portfolio..."
             />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Data di creazione (opzionale)
+            </label>
+            <input
+              type="date"
+              value={formData.customCreatedAt}
+              onChange={(e) => setFormData(prev => ({ ...prev, customCreatedAt: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Se non specificata, verrà usata la data di oggi
+            </p>
           </div>
           
           <div className="flex justify-end gap-3 pt-4">
