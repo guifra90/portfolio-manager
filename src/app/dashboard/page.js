@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Plus, Briefcase, TrendingUp, DollarSign, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { Plus, Briefcase, TrendingUp, DollarSign, Edit, Trash2, MoreHorizontal, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency, CurrencyDisplay } from '@/lib/utils';
 
@@ -49,13 +49,22 @@ export default function DashboardPage() {
           <h2 className="heading-lg">I tuoi Portfolio</h2>
           <p className="text-gray-500 text-sm mt-1">Gestisci e monitora i tuoi investimenti</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn-primary btn-compact flex items-center gap-2 w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="sm:inline">Nuovo Portfolio</span>
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link
+            href="/dashboard/lazy-portfolios"
+            className="btn-secondary btn-compact flex items-center gap-2 flex-1 sm:flex-none"
+          >
+            <Layers className="h-4 w-4" />
+            <span>Lazy Portfolios</span>
+          </Link>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn-primary btn-compact flex items-center gap-2 flex-1 sm:flex-none"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Nuovo Portfolio</span>
+          </button>
+        </div>
       </div>
 
       {/* Portfolio Grid */}
@@ -64,12 +73,19 @@ export default function DashboardPage() {
           <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">Nessun portfolio</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Inizia creando il tuo primo portfolio di investimenti
+            Inizia creando il tuo primo portfolio di investimenti o scegli un modello predefinito
           </p>
-          <div className="mt-6">
+          <div className="mt-6 flex gap-3 justify-center">
+            <Link
+              href="/dashboard/lazy-portfolios"
+              className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <Layers className="h-4 w-4" />
+              Lazy Portfolios
+            </Link>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Crea Portfolio

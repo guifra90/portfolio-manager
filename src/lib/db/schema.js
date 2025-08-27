@@ -86,3 +86,28 @@ export const passwordResetTokens = sqliteTable('password_reset_tokens', {
   used: integer('used', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+
+// Tabella Lazy Portfolios (modelli predefiniti)
+export const lazyPortfolios = sqliteTable('lazy_portfolios', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  riskLevel: integer('risk_level').notNull(), // 1-5 stelle
+  rebalancingFrequency: text('rebalancing_frequency').notNull(), // 'trimestrale', 'semestrale', 'annuale'
+  notes: text('notes'),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// Tabella ETF per i Lazy Portfolios
+export const lazyPortfolioEtfs = sqliteTable('lazy_portfolio_etfs', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  lazyPortfolioId: text('lazy_portfolio_id').notNull().references(() => lazyPortfolios.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  symbol: text('symbol').notNull(),
+  isin: text('isin'),
+  justETFUrl: text('justetf_url'),
+  allocation: real('allocation').notNull(), // percentuale allocazione
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});

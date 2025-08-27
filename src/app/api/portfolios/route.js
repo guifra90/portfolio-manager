@@ -1,6 +1,6 @@
 // src/app/api/portfolios/route.js
 import { NextResponse } from 'next/server';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import db from '@/lib/db/index.js';
 import { portfolios, users } from '@/lib/db/schema.js';
 import { requireAuth, createAuthResponse } from '@/lib/auth/middleware.js';
@@ -35,11 +35,11 @@ export async function GET(request) {
         .where(eq(portfolios.isActive, true))
         .orderBy(desc(portfolios.updatedAt));
     } else {
-      // Utenti normali vedono solo i propri
+      // Utenti normali vedono solo i propri portfolio attivi
       userPortfolios = await db
         .select()
         .from(portfolios)
-        .where(eq(portfolios.userId, session.user.id))
+        .where(and(eq(portfolios.userId, session.user.id), eq(portfolios.isActive, true)))
         .orderBy(desc(portfolios.updatedAt));
     }
 
@@ -87,12 +87,11 @@ export async function POST(request) {
 
     await createAuditLog({
       userId: session.user.id,
-      action: AUDIT_ACTIONS.CREATE,
+      action: AUDIT_ACTIONS.CREATE_PORTFOLIO,
       targetType: TARGET_TYPES.PORTFOLIO,
       targetId: newPortfolio.id,
       details: { name: newPortfolio.name, description: newPortfolio.description },
-      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown'
+      request
     });
 
     return NextResponse.json(newPortfolio, { status: 201 });

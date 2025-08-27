@@ -43,8 +43,8 @@ export default function AdminLayout({ children }) {
     { name: 'Dashboard', href: '/admin', icon: Activity },
     { name: 'Utenti', href: '/admin/users', icon: Users },
     { name: 'Portfolio', href: '/admin/portfolios', icon: Briefcase },
+    { name: 'Lazy Portfolios', href: '/admin/lazy-portfolios', icon: Settings },
     { name: 'Audit Log', href: '/admin/audit', icon: Shield },
-    { name: 'Impostazioni', href: '/admin/settings', icon: Settings },
   ];
 
   return (

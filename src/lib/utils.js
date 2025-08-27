@@ -60,7 +60,8 @@ export function formatPercentage(value, options = {}) {
     locale = 'it-IT',
     minimumFractionDigits = 1,
     maximumFractionDigits = 2,
-    showSign = false
+    showSign = false,
+    isAlreadyPercentage = false // Se true, il valore è già una percentuale (es. 60 invece di 0.6)
   } = options;
 
   if (value == null || isNaN(value)) {
@@ -68,14 +69,14 @@ export function formatPercentage(value, options = {}) {
   }
 
   const numericValue = Number(value);
-  const percentage = numericValue * 100;
+  const percentage = isAlreadyPercentage ? numericValue : numericValue * 100;
 
   const formatted = percentage.toLocaleString(locale, {
     minimumFractionDigits,
     maximumFractionDigits
   });
 
-  const sign = showSign && numericValue > 0 ? '+' : '';
+  const sign = showSign && percentage > 0 ? '+' : '';
   return `${sign}${formatted}%`;
 }
 
