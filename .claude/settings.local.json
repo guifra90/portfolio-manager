@@ -19,7 +19,11 @@
       "Bash(turso db tokens create:*)",
       "Bash(npm i:*)",
       "Bash(vercel:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(for table in lazy_portfolios lazy_portfolio_etfs audit_log rebalancing_history)",
+      "Bash(do echo \"=== $table ===\")",
+      "Bash(done)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
