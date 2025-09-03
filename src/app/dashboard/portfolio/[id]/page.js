@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Target, RefreshCw, Plus, Minus, Calculator, ExternalLink, Edit, Trash2, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, RefreshCw, Plus, Minus, Calculator, ExternalLink, Edit, Trash2, Calendar, Save, History } from 'lucide-react';
 import { formatCurrency, formatPercentage, CurrencyDisplay, PercentageDisplay } from '@/lib/utils';
 
 export default function PortfolioDetailPage() {
@@ -25,10 +25,17 @@ export default function PortfolioDetailPage() {
   const [showAddPerformance, setShowAddPerformance] = useState(false);
   const [performanceToEdit, setPerformanceToEdit] = useState(null);
   const [performanceToDelete, setPerformanceToDelete] = useState(null);
+  
+  // Transaction history state
+  const [transactions, setTransactions] = useState([]);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
+  const [isSavingRebalancing, setIsSavingRebalancing] = useState(false);
+  const [showAddCashModal, setShowAddCashModal] = useState(false);
 
   useEffect(() => {
     fetchPortfolio();
     fetchAnnualPerformances();
+    fetchTransactions();
   }, [portfolioId]);
 
   const fetchPortfolio = async () => {
@@ -57,16 +64,108 @@ export default function PortfolioDetailPage() {
     }
   };
 
+  const fetchTransactions = async () => {
+    try {
+      const response = await fetch(`/api/portfolios/${portfolioId}/transactions`);
+      if (response.ok) {
+        const data = await response.json();
+        setTransactions(data);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento delle transazioni:', error);
+    }
+  };
+
+  const saveRebalancing = async (useRounded = true) => {
+    if (!rebalancingCalculations.length) return;
+
+    setIsSavingRebalancing(true);
+    
+    try {
+      // Prepara le transazioni per l'API (sceglie tra valori esatti o arrotondati)
+      const transactionsToSave = rebalancingCalculations
+        .filter(asset => {
+          const qty = useRounded ? Math.abs(asset.roundedQuantityDelta) : Math.abs(asset.quantityDelta);
+          return qty > (useRounded ? 0 : 0.01); // Solo transazioni significative
+        })
+        .map(asset => {
+          const quantity = useRounded ? Math.abs(asset.roundedQuantityDelta) : Math.abs(asset.quantityDelta);
+          const action = useRounded ? asset.roundedAction : asset.action;
+          
+          return {
+            assetId: asset.id,
+            assetSymbol: asset.symbol,
+            action: action,
+            quantity: quantity,
+            price: asset.currentPrice,
+            fees: 0, // Potresti aggiungere un campo per le commissioni nel UI
+          };
+        });
+
+      // Mappa le azioni italiane a quelle inglesi
+      const mappedTransactions = transactionsToSave.map(t => ({
+        ...t,
+        action: t.action === 'ACQUISTA' ? 'BUY' : 'SELL'
+      }));
+
+      const rebalancingData = {
+        transactions: mappedTransactions,
+        cashDeposit: rebalancingMode === 'liquidity' ? newLiquidity : null,
+        notes: `Ribilanciamento ${rebalancingMode === 'liquidity' ? 'con nuova liquidità' : 'vendita/acquisto'}`,
+        executedAt: new Date(),
+      };
+
+      const response = await fetch(`/api/portfolios/${portfolioId}/rebalancing`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(rebalancingData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Ribilanciamento salvato con successo:', result);
+        
+        // Ricarica i dati
+        await fetchTransactions();
+        await fetchPortfolio();
+        
+        // Nascondi il calcolatore
+        setShowRebalancing(false);
+        
+        alert(`Ribilanciamento salvato con successo!\n\n✅ ${result.transactions.length} transazioni create\n✅ Asset del portfolio aggiornati automaticamente\n✅ Allocazioni ricalcolate\n\nIl tuo portfolio è ora sincronizzato con le operazioni!`);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nel salvataggio');
+      }
+    } catch (error) {
+      console.error('Errore nel salvataggio del ribilanciamento:', error);
+      alert('Errore nel salvataggio del ribilanciamento: ' + error.message);
+    } finally {
+      setIsSavingRebalancing(false);
+    }
+  };
+
   // Calcoli del portfolio
   const portfolioMetrics = useMemo(() => {
-    if (!portfolio?.assets) return { totalValue: 0, totalProfit: 0, returnPercentage: 0 };
+    if (!portfolio?.assets) return { 
+      totalValue: 0, 
+      totalProfit: 0, 
+      returnPercentage: 0
+    };
     
     const totalValue = portfolio.assets.reduce((sum, asset) => sum + asset.currentValue, 0);
     const totalProfit = portfolio.assets.reduce((sum, asset) => sum + asset.profitLoss, 0);
     const returnPercentage = totalValue > 0 ? (totalProfit / (totalValue - totalProfit)) * 100 : 0;
     
-    return { totalValue, totalProfit, returnPercentage };
-  }, [portfolio]);
+    
+    return { 
+      totalValue, 
+      totalProfit, 
+      returnPercentage
+    };
+  }, [portfolio, transactions]);
 
   // Calcolo del ribilanciamento
   const rebalancingCalculations = useMemo(() => {
@@ -82,14 +181,25 @@ export default function PortfolioDetailPage() {
       const quantityDelta = difference / asset.currentPrice;
       const newQuantity = asset.quantity + quantityDelta;
 
+      // Calcoli per quantità arrotondate (più pratiche)
+      const roundedQuantityDelta = Math.round(quantityDelta);
+      const roundedNewQuantity = asset.quantity + roundedQuantityDelta;
+      const roundedOperationAmount = Math.abs(roundedQuantityDelta * asset.currentPrice);
+      const roundedDifference = roundedQuantityDelta * asset.currentPrice;
+
       return {
         ...asset,
         targetValue,
         difference,
-        quantityDelta: Math.round(quantityDelta * 100) / 100,
-        newQuantity: Math.round(newQuantity),
+        quantityDelta: quantityDelta,
+        newQuantity: newQuantity,
         action: difference > 0 ? 'ACQUISTA' : 'VENDI',
-        operationAmount: Math.abs(difference)
+        operationAmount: Math.abs(difference),
+        // Valori arrotondati per praticità
+        roundedQuantityDelta: roundedQuantityDelta,
+        roundedNewQuantity: Math.max(0, roundedNewQuantity), // Non può essere negativo
+        roundedOperationAmount: roundedOperationAmount,
+        roundedAction: roundedQuantityDelta > 0 ? 'ACQUISTA' : roundedQuantityDelta < 0 ? 'VENDI' : 'NESSUNA AZIONE'
       };
     });
   }, [portfolio, portfolioMetrics.totalValue, rebalancingMode, newLiquidity, showRebalancing]);
@@ -169,40 +279,56 @@ export default function PortfolioDetailPage() {
       {/* Statistiche */}
       <div className="card-compact">
         <h3 className="heading-sm mb-3">Statistiche Portfolio</h3>
-        <div className="responsive-grid-stats">
-          <div className="text-center">
-            <DollarSign className="h-6 w-6 text-blue-600 mx-auto mb-1" />
-            <p className="text-xs font-medium text-gray-500">Valore Portfolio</p>
-            <p className="text-lg font-bold text-gray-900">{formatCurrency(portfolioMetrics.totalValue)}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center bg-blue-50 rounded-lg p-3">
+            <div className="flex items-center justify-center mb-1">
+              <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-blue-600" />
+              </div>
+            </div>
+            <p className="text-xs font-medium text-blue-700">Valore Attuale</p>
+            <p className="text-lg font-bold text-blue-800">{formatCurrency(portfolioMetrics.totalValue)}</p>
           </div>
 
-          <div className="text-center">
-            {portfolioMetrics.totalProfit >= 0 ? 
-              <TrendingUp className="h-6 w-6 text-green-600 mx-auto mb-1" /> : 
-              <TrendingDown className="h-6 w-6 text-red-600 mx-auto mb-1" />
-            }
-            <p className="text-xs font-medium text-gray-500">Profitto/Perdita</p>
+          <div className={`text-center rounded-lg p-3 ${portfolioMetrics.totalProfit >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+            <div className="flex items-center justify-center mb-1">
+              <div className={`h-6 w-6 rounded-full flex items-center justify-center ${portfolioMetrics.totalProfit >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                {portfolioMetrics.totalProfit >= 0 ? 
+                  <TrendingUp className="h-4 w-4 text-green-600" /> : 
+                  <TrendingDown className="h-4 w-4 text-red-600" />
+                }
+              </div>
+            </div>
+            <p className={`text-xs font-medium ${portfolioMetrics.totalProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>Profitto/Perdita</p>
             <CurrencyDisplay 
               value={portfolioMetrics.totalProfit}
-              className="text-lg font-bold"
+              className={`text-lg font-bold ${portfolioMetrics.totalProfit >= 0 ? 'text-green-800' : 'text-red-800'}`}
               showSign
             />
           </div>
 
-          <div className="text-center">
-            <Target className="h-6 w-6 text-purple-600 mx-auto mb-1" />
-            <p className="text-xs font-medium text-gray-500">Rendimento</p>
+          <div className="text-center bg-purple-50 rounded-lg p-3">
+            <div className="flex items-center justify-center mb-1">
+              <div className="h-6 w-6 bg-purple-100 rounded-full flex items-center justify-center">
+                <Target className="h-4 w-4 text-purple-600" />
+              </div>
+            </div>
+            <p className="text-xs font-medium text-purple-700">Rendimento</p>
             <PercentageDisplay 
               value={portfolioMetrics.returnPercentage / 100}
-              className="text-lg font-bold"
+              className="text-lg font-bold text-purple-800"
               showSign
             />
           </div>
 
-          <div className="text-center">
-            <RefreshCw className="h-6 w-6 text-orange-600 mx-auto mb-1" />
-            <p className="text-xs font-medium text-gray-500">Asset</p>
-            <p className="text-lg font-bold text-gray-900">{portfolio.assets.length}</p>
+          <div className="text-center bg-orange-50 rounded-lg p-3">
+            <div className="flex items-center justify-center mb-1">
+              <div className="h-6 w-6 bg-orange-100 rounded-full flex items-center justify-center">
+                <RefreshCw className="h-4 w-4 text-orange-600" />
+              </div>
+            </div>
+            <p className="text-xs font-medium text-orange-700">Asset</p>
+            <p className="text-lg font-bold text-orange-800">{portfolio.assets.length}</p>
           </div>
         </div>
       </div>
@@ -411,12 +537,34 @@ export default function PortfolioDetailPage() {
         {/* Risultati Ribilanciamento */}
         {showRebalancing && rebalancingCalculations.length > 0 && (
           <div className="border-t pt-6">
-            <h4 className="text-md font-semibold text-gray-900 mb-4">
-              Operazioni Necessarie 
-              {rebalancingMode === 'liquidity' && newLiquidity > 0 && 
-                ` (con ${formatCurrency(newLiquidity)} di nuova liquidità)`
-              }
-            </h4>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-md font-semibold text-gray-900">
+                Operazioni Necessarie 
+                {rebalancingMode === 'liquidity' && newLiquidity > 0 && 
+                  ` (con ${formatCurrency(newLiquidity)} di nuova liquidità)`
+                }
+              </h4>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => saveRebalancing(false)}
+                  disabled={isSavingRebalancing}
+                  className="btn-secondary btn-compact flex items-center gap-2 disabled:opacity-50"
+                  title="Salva con quantità esatte (decimali)"
+                >
+                  <Save className="h-4 w-4" />
+                  Salva Esatte
+                </button>
+                <button
+                  onClick={() => saveRebalancing(true)}
+                  disabled={isSavingRebalancing}
+                  className="btn-primary btn-compact flex items-center gap-2 disabled:opacity-50"
+                  title="Salva con quantità arrotondate (consigliate per ETF)"
+                >
+                  <Save className="h-4 w-4" />
+                  {isSavingRebalancing ? 'Salvataggio...' : 'Salva Arrotondate ⭐'}
+                </button>
+              </div>
+            </div>
             
             <div className="responsive-table-container">
               <table className="min-w-full divide-y divide-gray-200">
@@ -424,9 +572,18 @@ export default function PortfolioDetailPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Azione</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantità</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Importo</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nuova Quantità</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div>Quantità</div>
+                      <div className="text-xs font-normal text-gray-400">(Esatta / Arrotondata)</div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div>Importo</div>
+                      <div className="text-xs font-normal text-gray-400">(Esatto / Arrotondato)</div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div>Nuova Quantità</div>
+                      <div className="text-xs font-normal text-gray-400">(Esatta / Arrotondata)</div>
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valore Target</th>
                   </tr>
                 </thead>
@@ -437,23 +594,54 @@ export default function PortfolioDetailPage() {
                         {asset.symbol}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 w-fit ${
-                          asset.action === 'ACQUISTA' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {asset.action === 'ACQUISTA' ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
-                          {asset.action}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 w-fit ${
+                            asset.roundedAction === 'ACQUISTA' 
+                              ? 'bg-green-100 text-green-800' 
+                              : asset.roundedAction === 'VENDI'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {asset.roundedAction === 'ACQUISTA' ? <Plus className="h-3 w-3" /> : 
+                             asset.roundedAction === 'VENDI' ? <Minus className="h-3 w-3" /> : null}
+                            {asset.roundedAction}
+                          </span>
+                          {asset.roundedAction === 'NESSUNA AZIONE' && (
+                            <span className="text-xs text-gray-500">(già bilanciato)</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {Math.abs(asset.quantityDelta)} quote
+                        <div>
+                          <div className="text-gray-600">
+                            <span className="font-mono">{Math.abs(asset.quantityDelta).toFixed(2)}</span>
+                            <span className="text-xs text-gray-400 ml-1">quote</span>
+                          </div>
+                          <div className="text-green-700 font-medium">
+                            <span className="font-mono">{Math.abs(asset.roundedQuantityDelta)}</span>
+                            <span className="text-xs text-green-600 ml-1">quote ⭐</span>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(asset.operationAmount)}
+                        <div>
+                          <div className="text-gray-600 text-sm">
+                            {formatCurrency(asset.operationAmount)}
+                          </div>
+                          <div className="text-green-700 font-medium">
+                            {formatCurrency(asset.roundedOperationAmount)} ⭐
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {asset.newQuantity}
+                        <div>
+                          <div className="text-gray-600">
+                            <span className="font-mono">{asset.newQuantity.toFixed(2)}</span>
+                          </div>
+                          <div className="text-green-700 font-medium">
+                            <span className="font-mono">{asset.roundedNewQuantity}</span> ⭐
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatCurrency(asset.targetValue)}
@@ -462,6 +650,28 @@ export default function PortfolioDetailPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            
+            {/* Legenda per le quantità */}
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 text-xs font-bold">ℹ</span>
+                  </div>
+                </div>
+                <div className="text-sm">
+                  <h4 className="font-medium text-blue-900 mb-1">Quantità Suggerite ⭐</h4>
+                  <p className="text-blue-700 mb-2">
+                    I valori <strong>arrotondati</strong> (⭐) sono consigliati per gli acquisti ETF poiché permettono di comprare solo quote intere, 
+                    evitando frazioni difficili da gestire nelle piattaforme di trading.
+                  </p>
+                  <div className="text-xs text-blue-600">
+                    • <strong>Quantità esatte</strong>: Ribilanciamento matematicamente perfetto<br/>
+                    • <strong>Quantità arrotondate</strong>: Più pratiche per l'acquisto reale (consigliate)
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -560,6 +770,157 @@ export default function PortfolioDetailPage() {
         )}
       </div>
 
+      {/* Sezione Storico Transazioni */}
+      <div className="card-compact">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="heading-sm">Storico Transazioni</h3>
+          <div className="flex items-center gap-2">
+            <History className="h-5 w-5 text-blue-600" />
+            <button
+              onClick={() => setShowAddCashModal(true)}
+              className="btn-primary btn-compact flex items-center gap-2"
+              title="Registra un apporto di liquidità manuale"
+            >
+              <Plus className="h-4 w-4" />
+              Apporto Liquidità
+            </button>
+            <button
+              onClick={() => setShowTransactionHistory(!showTransactionHistory)}
+              className="btn-secondary btn-compact"
+            >
+              {showTransactionHistory ? 'Nascondi' : 'Mostra'} Storico
+            </button>
+          </div>
+        </div>
+        
+        {showTransactionHistory && (
+          <>
+            {transactions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <History className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p>Nessuna transazione registrata</p>
+                <p className="text-sm mt-1">Le transazioni salvate dai ribilanciamenti appariranno qui</p>
+              </div>
+            ) : (
+              <div className="responsive-table-container">
+                <table className="table-professional">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantità</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prezzo</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Importo</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commissioni</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {transactions.map((transaction) => {
+                      const isPositive = transaction.amount > 0;
+                      const typeLabels = {
+                        'BUY': 'Acquisto',
+                        'SELL': 'Vendita', 
+                        'CASH_DEPOSIT': 'Apporto',
+                        'CASH_WITHDRAWAL': 'Prelievo'
+                      };
+                      
+                      return (
+                        <tr key={transaction.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {new Date(transaction.executedAt).toLocaleDateString('it-IT', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              transaction.type === 'BUY' ? 'bg-red-100 text-red-800' :
+                              transaction.type === 'SELL' ? 'bg-green-100 text-green-800' :
+                              transaction.type === 'CASH_DEPOSIT' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {typeLabels[transaction.type] || transaction.type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {transaction.assetSymbol || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {transaction.quantity || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {transaction.price ? formatCurrency(transaction.price) : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <CurrencyDisplay 
+                              value={transaction.amount}
+                              showSign
+                              className={isPositive ? 'text-green-600' : 'text-red-600'}
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {transaction.fees > 0 ? formatCurrency(transaction.fees) : '-'}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                            {transaction.notes || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            {/* Riassunto liquidità totale investita */}
+            {transactions.length > 0 && (
+              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-blue-900 mb-2">Riassunto Liquidità</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700">Totale Apporti:</span>
+                    <div className="font-semibold text-blue-900">
+                      {formatCurrency(
+                        transactions
+                          .filter(t => t.type === 'CASH_DEPOSIT')
+                          .reduce((sum, t) => sum + t.amount, 0)
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Totale Acquisti:</span>
+                    <div className="font-semibold text-blue-900">
+                      {formatCurrency(
+                        Math.abs(
+                          transactions
+                            .filter(t => t.type === 'BUY')
+                            .reduce((sum, t) => sum + t.amount, 0)
+                        )
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Totale Vendite:</span>
+                    <div className="font-semibold text-blue-900">
+                      {formatCurrency(
+                        transactions
+                          .filter(t => t.type === 'SELL')
+                          .reduce((sum, t) => sum + t.amount, 0)
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Add Asset Modal */}
       {showAddAsset && (
         <AddAssetModal 
@@ -613,6 +974,18 @@ export default function PortfolioDetailPage() {
           portfolioId={portfolioId}
           onClose={() => setPerformanceToDelete(null)}
           onSuccess={fetchAnnualPerformances}
+        />
+      )}
+
+      {/* Add Cash Deposit Modal */}
+      {showAddCashModal && (
+        <AddCashDepositModal 
+          portfolioId={portfolioId}
+          onClose={() => setShowAddCashModal(false)}
+          onSuccess={() => {
+            fetchTransactions();
+            fetchPortfolio();
+          }}
         />
       )}
     </div>
@@ -1474,6 +1847,135 @@ function DeletePerformanceModal({ performance, portfolioId, onClose, onSuccess }
             {isLoading ? 'Eliminazione...' : 'Elimina Performance'}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+// Componente Modal per aggiungere apporto di liquidità manuale
+function AddCashDepositModal({ portfolioId, onClose, onSuccess }) {
+  const [formData, setFormData] = useState({
+    amount: 0,
+    executedAt: new Date().toISOString().slice(0, 16), // formato datetime-local
+    notes: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      if (formData.amount <= 0) {
+        throw new Error("L'importo deve essere maggiore di zero");
+      }
+
+      const response = await fetch(`/api/portfolios/${portfolioId}/transactions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "CASH_DEPOSIT",
+          amount: formData.amount,
+          executedAt: formData.executedAt,
+          notes: formData.notes,
+        }),
+      });
+
+      if (response.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const data = await response.json();
+        setError(data.error || "Errore nella registrazione dell'apporto");
+      }
+    } catch (error) {
+      setError(error.message || "Errore nella registrazione dell'apporto");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="responsive-modal">
+      <div className="responsive-modal-content max-w-md">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-shrink-0">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <Plus className="w-5 h-5 text-green-600" />
+            </div>
+          </div>
+          <div>
+            <h3 className="heading-md">Registra Apporto Liquidità</h3>
+            <p className="text-sm text-gray-500">Aggiungi un versamento manuale al portfolio</p>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="layout-compact">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+          
+          <div>
+            <label className="heading-sm mb-2">Importo (€)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              required
+              value={formData.amount}
+              onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+              className="input-professional"
+              placeholder="1000.00"
+            />
+          </div>
+          
+          <div>
+            <label className="heading-sm mb-2">Data e Ora</label>
+            <input
+              type="datetime-local"
+              required
+              value={formData.executedAt}
+              onChange={(e) => setFormData(prev => ({ ...prev, executedAt: e.target.value }))}
+              className="input-professional"
+            />
+          </div>
+          
+          <div>
+            <label className="heading-sm mb-2">Note (opzionale)</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              className="input-professional"
+              rows={3}
+              placeholder="Bonifico del 15/03/2024, stipendio marzo, ecc..."
+            />
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="btn-secondary disabled:opacity-50"
+            >
+              Annulla
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary disabled:opacity-50"
+            >
+              {isLoading ? "Registrazione..." : "Registra Apporto"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

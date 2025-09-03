@@ -126,3 +126,21 @@ export const portfolioAnnualPerformance = sqliteTable('portfolio_annual_performa
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+
+// Tabella per lo storico delle transazioni (acquisti, vendite, apporti liquidità)
+export const portfolioTransactions = sqliteTable('portfolio_transactions', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  portfolioId: text('portfolio_id').notNull().references(() => portfolios.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // 'BUY', 'SELL', 'CASH_DEPOSIT', 'CASH_WITHDRAWAL'
+  assetId: text('asset_id').references(() => assets.id, { onDelete: 'set null' }), // null per transazioni di liquidità
+  assetSymbol: text('asset_symbol'), // per mantenere il simbolo anche se l'asset viene eliminato
+  quantity: real('quantity'), // null per transazioni di solo contante
+  price: real('price'), // null per transazioni di solo contante
+  amount: real('amount').notNull(), // importo totale (positivo per entrate, negativo per uscite)
+  fees: real('fees').notNull().default(0), // commissioni
+  executedBy: text('executed_by').notNull().references(() => users.id),
+  executedAt: integer('executed_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  notes: text('notes'),
+  rebalancingBatch: text('rebalancing_batch'), // per raggruppare transazioni dello stesso ribilanciamento
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
