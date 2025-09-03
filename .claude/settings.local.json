@@ -10,7 +10,16 @@
       "mcp__ide__getDiagnostics",
       "Bash(git checkout:*)",
       "Read(/Users/francescoguidotti/Desktop/**)",
-      "Read(/Users/francescoguidotti/Desktop/**)"
+      "Read(/Users/francescoguidotti/Desktop/**)",
+      "Bash(npm install:*)",
+      "Bash(source:*)",
+      "Bash(turso auth:*)",
+      "Bash(turso db create:*)",
+      "Bash(turso db show:*)",
+      "Bash(turso db tokens create:*)",
+      "Bash(npm i:*)",
+      "Bash(vercel:*)",
+      "Bash(npx vercel:*)"
     ],
     "deny": [],
     "ask": []
