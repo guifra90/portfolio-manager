@@ -1,6 +1,6 @@
 // src/app/api/admin/users/route.js
 import { NextResponse } from 'next/server';
-import { eq, desc, count } from 'drizzle-orm';
+import { eq, desc, count, and } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import db from '@/lib/db/index.js';
 import { users, portfolios } from '@/lib/db/schema.js';
@@ -25,7 +25,7 @@ export async function GET(request) {
         portfolioCount: count(portfolios.id)
       })
       .from(users)
-      .leftJoin(portfolios, eq(users.id, portfolios.userId))
+      .leftJoin(portfolios, and(eq(users.id, portfolios.userId), eq(portfolios.isActive, true)))
       .groupBy(users.id, users.email, users.name, users.role, users.isActive, users.createdAt, users.updatedAt)
       .orderBy(desc(users.createdAt));
 
