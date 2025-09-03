@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Target, RefreshCw, Plus, Minus, Calculator, ExternalLink, Edit, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, RefreshCw, Plus, Minus, Calculator, ExternalLink, Edit, Trash2, Calendar } from 'lucide-react';
 import { formatCurrency, formatPercentage, CurrencyDisplay, PercentageDisplay } from '@/lib/utils';
 
 export default function PortfolioDetailPage() {
@@ -19,9 +19,16 @@ export default function PortfolioDetailPage() {
   const [showAddAsset, setShowAddAsset] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState(null);
   const [assetToEdit, setAssetToEdit] = useState(null);
+  
+  // Performance tracking state
+  const [annualPerformances, setAnnualPerformances] = useState([]);
+  const [showAddPerformance, setShowAddPerformance] = useState(false);
+  const [performanceToEdit, setPerformanceToEdit] = useState(null);
+  const [performanceToDelete, setPerformanceToDelete] = useState(null);
 
   useEffect(() => {
     fetchPortfolio();
+    fetchAnnualPerformances();
   }, [portfolioId]);
 
   const fetchPortfolio = async () => {
@@ -35,6 +42,18 @@ export default function PortfolioDetailPage() {
       console.error('Errore nel caricamento del portfolio:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAnnualPerformances = async () => {
+    try {
+      const response = await fetch(`/api/portfolios/${portfolioId}/performance`);
+      if (response.ok) {
+        const data = await response.json();
+        setAnnualPerformances(data);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento delle performance:', error);
     }
   };
 
@@ -448,6 +467,99 @@ export default function PortfolioDetailPage() {
         )}
       </div>
 
+      {/* Sezione Performance Annuali */}
+      <div className="card-compact">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="heading-sm">Performance Storiche</h3>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-purple-600" />
+            <button
+              onClick={() => setShowAddPerformance(true)}
+              className="btn-primary btn-compact flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Aggiungi Anno</span>
+            </button>
+          </div>
+        </div>
+        
+        {annualPerformances.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <p>Nessuna performance storica registrata</p>
+            <p className="text-sm mt-1">Aggiungi le performance degli anni precedenti per tenere traccia della crescita del tuo portfolio</p>
+          </div>
+        ) : (
+          <div className="responsive-table-container">
+            <table className="table-professional">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Anno</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profitto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perdita</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P&L Netto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valore Portfolio</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rendimento %</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {annualPerformances.map((performance) => (
+                  <tr key={performance.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {performance.year}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                      +{formatCurrency(performance.totalProfit)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                      -{formatCurrency(performance.totalLoss)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <CurrencyDisplay 
+                        value={performance.netProfitLoss}
+                        showSign
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatCurrency(performance.portfolioValue)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <PercentageDisplay 
+                        value={performance.returnPercentage / 100}
+                        showSign
+                      />
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                      {performance.notes || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setPerformanceToEdit(performance)}
+                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                          title="Modifica performance"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setPerformanceToDelete(performance)}
+                          className="text-red-600 hover:text-red-900 transition-colors"
+                          title="Elimina performance"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Add Asset Modal */}
       {showAddAsset && (
         <AddAssetModal 
@@ -472,6 +584,35 @@ export default function PortfolioDetailPage() {
           asset={assetToDelete}
           onClose={() => setAssetToDelete(null)}
           onSuccess={fetchPortfolio}
+        />
+      )}
+
+      {/* Add Performance Modal */}
+      {showAddPerformance && (
+        <AddPerformanceModal 
+          portfolioId={portfolioId}
+          onClose={() => setShowAddPerformance(false)}
+          onSuccess={fetchAnnualPerformances}
+        />
+      )}
+
+      {/* Edit Performance Modal */}
+      {performanceToEdit && (
+        <EditPerformanceModal 
+          performance={performanceToEdit}
+          portfolioId={portfolioId}
+          onClose={() => setPerformanceToEdit(null)}
+          onSuccess={fetchAnnualPerformances}
+        />
+      )}
+
+      {/* Delete Performance Modal */}
+      {performanceToDelete && (
+        <DeletePerformanceModal 
+          performance={performanceToDelete}
+          portfolioId={portfolioId}
+          onClose={() => setPerformanceToDelete(null)}
+          onSuccess={fetchAnnualPerformances}
         />
       )}
     </div>
@@ -940,6 +1081,399 @@ function EditAssetModal({ asset, onClose, onSuccess }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+// Componente Modal per aggiungere performance annuale
+function AddPerformanceModal({ portfolioId, onClose, onSuccess }) {
+  const [formData, setFormData] = useState({
+    year: new Date().getFullYear() - 1,
+    totalProfit: 0,
+    totalLoss: 0,
+    portfolioValue: 0,
+    notes: '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/portfolios/${portfolioId}/performance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Errore nella creazione della performance');
+      }
+    } catch (error) {
+      setError('Errore nella creazione della performance');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="responsive-modal">
+      <div className="responsive-modal-content max-w-2xl">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-shrink-0">
+            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-purple-600" />
+            </div>
+          </div>
+          <div>
+            <h3 className="heading-md">Aggiungi Performance Annuale</h3>
+            <p className="text-sm text-gray-500">Inserisci i dati di performance per un anno specifico</p>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="layout-compact">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+          
+          <div className="responsive-form-grid">
+            <div>
+              <label className="heading-sm mb-2">Anno</label>
+              <input
+                type="number"
+                min="1900"
+                max={new Date().getFullYear()}
+                required
+                value={formData.year}
+                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
+                className="input-professional"
+                placeholder={new Date().getFullYear() - 1}
+              />
+            </div>
+            
+            <div>
+              <label className="heading-sm mb-2">Profitto Totale (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={formData.totalProfit}
+                onChange={(e) => setFormData(prev => ({ ...prev, totalProfit: parseFloat(e.target.value) || 0 }))}
+                className="input-professional"
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <label className="heading-sm mb-2">Perdita Totale (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={formData.totalLoss}
+                onChange={(e) => setFormData(prev => ({ ...prev, totalLoss: parseFloat(e.target.value) || 0 }))}
+                className="input-professional"
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <label className="heading-sm mb-2">Valore Portfolio (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={formData.portfolioValue}
+                onChange={(e) => setFormData(prev => ({ ...prev, portfolioValue: parseFloat(e.target.value) || 0 }))}
+                className="input-professional"
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Valore totale del portfolio alla fine dell'anno
+              </p>
+            </div>
+          </div>
+          
+          <div>
+            <label className="heading-sm mb-2">Note (opzionale)</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              className="input-professional"
+              rows={3}
+              placeholder="Note o commenti sulla performance dell'anno..."
+            />
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary"
+            >
+              Annulla
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary disabled:opacity-50"
+            >
+              {isLoading ? 'Aggiunta...' : 'Aggiungi Performance'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Componente Modal per modificare performance annuale
+function EditPerformanceModal({ performance, portfolioId, onClose, onSuccess }) {
+  const [formData, setFormData] = useState({
+    year: performance.year,
+    totalProfit: performance.totalProfit,
+    totalLoss: performance.totalLoss,
+    portfolioValue: performance.portfolioValue,
+    notes: performance.notes || '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/portfolios/${portfolioId}/performance/${performance.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Errore nell\'aggiornamento della performance');
+      }
+    } catch (error) {
+      setError('Errore nell\'aggiornamento della performance');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="responsive-modal">
+      <div className="responsive-modal-content max-w-2xl">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-shrink-0">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <Edit className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
+          <div>
+            <h3 className="heading-md">Modifica Performance {performance.year}</h3>
+            <p className="text-sm text-gray-500">Aggiorna i dati di performance per l'anno selezionato</p>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="layout-compact">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+          
+          <div className="responsive-form-grid">
+            <div>
+              <label className="heading-sm mb-2">Anno</label>
+              <input
+                type="number"
+                min="1900"
+                max={new Date().getFullYear()}
+                required
+                value={formData.year}
+                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
+                className="input-professional"
+                placeholder={new Date().getFullYear() - 1}
+              />
+            </div>
+            
+            <div>
+              <label className="heading-sm mb-2">Profitto Totale (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={formData.totalProfit}
+                onChange={(e) => setFormData(prev => ({ ...prev, totalProfit: parseFloat(e.target.value) || 0 }))}
+                className="input-professional"
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <label className="heading-sm mb-2">Perdita Totale (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={formData.totalLoss}
+                onChange={(e) => setFormData(prev => ({ ...prev, totalLoss: parseFloat(e.target.value) || 0 }))}
+                className="input-professional"
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <label className="heading-sm mb-2">Valore Portfolio (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={formData.portfolioValue}
+                onChange={(e) => setFormData(prev => ({ ...prev, portfolioValue: parseFloat(e.target.value) || 0 }))}
+                className="input-professional"
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Valore totale del portfolio alla fine dell'anno
+              </p>
+            </div>
+          </div>
+          
+          <div>
+            <label className="heading-sm mb-2">Note (opzionale)</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              className="input-professional"
+              rows={3}
+              placeholder="Note o commenti sulla performance dell'anno..."
+            />
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="btn-secondary disabled:opacity-50"
+            >
+              Annulla
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary disabled:opacity-50"
+            >
+              {isLoading ? 'Salvataggio...' : 'Salva Modifiche'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Componente Modal per eliminare performance annuale
+function DeletePerformanceModal({ performance, portfolioId, onClose, onSuccess }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleDelete = async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/portfolios/${portfolioId}/performance/${performance.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Errore nell\'eliminazione della performance');
+      }
+    } catch (error) {
+      setError('Errore nell\'eliminazione della performance');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="responsive-modal">
+      <div className="responsive-modal-content max-w-md">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-shrink-0">
+            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <Trash2 className="w-5 h-5 text-red-600" />
+            </div>
+          </div>
+          <div>
+            <h3 className="heading-md">Elimina Performance</h3>
+            <p className="text-sm text-gray-500">Questa azione non può essere annullata</p>
+          </div>
+        </div>
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        
+        <div className="mb-6">
+          <p className="text-gray-700">
+            Sei sicuro di voler eliminare la performance dell'anno <strong>{performance.year}</strong>?
+          </p>
+          <div className="mt-2 text-sm text-gray-500">
+            <p>P&L Netto: {formatCurrency(performance.netProfitLoss)}</p>
+            <p>Rendimento: {formatPercentage(performance.returnPercentage / 100, { showSign: true })}</p>
+          </div>
+        </div>
+        
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="btn-secondary disabled:opacity-50"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isLoading}
+            className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50"
+          >
+            {isLoading ? 'Eliminazione...' : 'Elimina Performance'}
+          </button>
+        </div>
       </div>
     </div>
   );

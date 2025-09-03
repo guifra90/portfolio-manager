@@ -6,7 +6,9 @@
       "Bash(npx drizzle-kit:*)",
       "Bash(sqlite3:*)",
       "Bash(node:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

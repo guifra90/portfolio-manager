@@ -111,3 +111,18 @@ export const lazyPortfolioEtfs = sqliteTable('lazy_portfolio_etfs', {
   allocation: real('allocation').notNull(), // percentuale allocazione
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+
+// Tabella per tracciare profitti/perdite annuali
+export const portfolioAnnualPerformance = sqliteTable('portfolio_annual_performance', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  portfolioId: text('portfolio_id').notNull().references(() => portfolios.id, { onDelete: 'cascade' }),
+  year: integer('year').notNull(),
+  totalProfit: real('total_profit').notNull().default(0),
+  totalLoss: real('total_loss').notNull().default(0),
+  netProfitLoss: real('net_profit_loss').notNull().default(0),
+  portfolioValue: real('portfolio_value').notNull().default(0),
+  returnPercentage: real('return_percentage').notNull().default(0),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
